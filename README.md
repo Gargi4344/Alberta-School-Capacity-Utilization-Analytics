@@ -1,6 +1,6 @@
 # Alberta School Capacity & Utilization Planning Platform
 
-> **Status: Phase 0 of 8.** The data download, source mapping, database and API skeleton are built. The dashboard comes in later phases; see [docs/PROGRESS.md](docs/PROGRESS.md). Screenshots, setup and "What I learned" are added in Phase 8.
+> **Status: Phase 1 of 8.** The data download, source mapping, and the verified load of 27,736 rows into PostgreSQL/PostGIS are built. The dashboard comes in later phases; see [docs/PROGRESS.md](docs/PROGRESS.md). Screenshots, setup and "What I learned" are added in Phase 8.
 
 Capital planners need to know which Alberta school authorities and schools are running out of space, and where enrolment is heading. This platform brings 10 years of public enrolment, capacity and boundary data into one PostgreSQL warehouse, checks its quality, forecasts enrolment 3 years ahead, and serves it through a self-service dashboard.
 
@@ -22,9 +22,12 @@ You need Docker and [uv](https://docs.astral.sh/uv/).
 ```bash
 make setup     # install backend deps, create .env
 make data      # download 24 public source files into data/raw/
-make dev       # PostgreSQL + PostGIS and the API: http://localhost:8000/docs
-make test      # backend tests
+make db-up     # start PostgreSQL + PostGIS
+make pipeline  # migrate, load into the raw schema, verify row counts
+make dev       # database + API: http://localhost:8000/docs
 ```
+
+No time to download? `make pipeline-sample` loads the committed sample in `data/sample/` (9 real authorities, all years). Run the tests with `make test`.
 
 ## Data sources
 
@@ -36,6 +39,8 @@ All from the Government of Alberta under the [Open Government Licence – Albert
 - Optional: [Edmonton Public Schools school locations](https://azimuth.epsb.ca/server/rest/services/Hosted/Schools__2025/FeatureServer), with its own terms
 
 [docs/source_mapping.md](docs/source_mapping.md) describes every file's columns and how the files join.
+
+**Sample data:** `data/sample/` is a small, real, unmodified subset of the Alberta files above (rows for 9 authorities), committed so CI and demos run offline. It is not synthetic.
 
 ## Known limitations (so far)
 

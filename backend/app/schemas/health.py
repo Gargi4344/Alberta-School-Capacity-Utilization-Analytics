@@ -8,4 +8,4 @@ class HealthOut(BaseModel):
     status: Literal["ok", "degraded"]
     database: Literal["up", "down"]
     postgis_version: str | None = None
-    last_pipeline_run: datetime | None = None  # filled once ops.pipeline_run exists (Phase 1)
+    last_pipeline_run: datetime | None = None  # latest successful step in ops.pipeline_run

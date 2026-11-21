@@ -4,7 +4,7 @@
 UV  ?= uv
 BE  := cd backend &&
 
-.PHONY: help setup data audit db-up db-down dev pipeline test lint format clean
+.PHONY: help setup data audit sample migrate pipeline pipeline-sample verify db-up db-down dev test lint format clean
 
 help:          ## Show this help
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'
@@ -25,13 +25,25 @@ db-up:         ## Start PostgreSQL + PostGIS
 db-down:       ## Stop all containers
 	docker compose down
 
-pipeline:      ## Load, transform, check and forecast (Phases 1-4)
-	@echo "Pipeline steps arrive in Phase 1 (load), 2 (dbt), 3 (quality), 4 (forecast)."
+sample:        ## Rebuild data/sample/ (small real subset) from data/raw/
+	$(BE) $(UV) run abcap make-sample
+
+migrate:       ## Apply database migrations (needs `make db-up`)
+	$(BE) $(UV) run abcap migrate
+
+pipeline: migrate  ## Load data/raw/ into PostgreSQL and verify row counts (dbt, checks, forecast follow)
+	$(BE) $(UV) run abcap run
+
+pipeline-sample: migrate  ## Same as pipeline, on the committed sample (no download needed)
+	$(BE) $(UV) run abcap run --source sample
+
+verify:        ## Compare source-file row counts with the raw tables
+	$(BE) $(UV) run abcap verify
 
 dev:           ## Run database + API (frontend joins in Phase 6)
 	docker compose up --build
 
-test:          ## Run backend tests
+test:          ## Run backend tests (database tests need `make db-up`)
 	$(BE) $(UV) run pytest -q
 
 lint:          ## Lint and format-check backend code

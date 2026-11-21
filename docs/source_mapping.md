@@ -140,7 +140,13 @@ The sheet is `ACU 2023-24F`. Rows 1 and 2 are blank, so the header is on **row 3
 
 ### Edmonton Public school points (optional)
 
-225 points, each with `abed_school_number_t` (the Alberta Education school number). It matches **224 of 224** Edmonton Public (`3020`) schools in 2025-26 enrolment, so the optional Edmonton school-level layer joins on `school_code` directly.
+225 points with `abed_school_number_t` (the Alberta Education school number). 224 carry a usable number. The 225th, *Ellerslie Campus South*, has a blank number (`' '`): it is a campus, not a school, and is dropped. The 224 numbers match **224 of 224** Edmonton Public (`3020`) schools in 2025-26 enrolment, so the optional Edmonton school-level layer joins on `school_code` directly. *(Corrected in Phase 1: the Phase 0 check counted the blank as a number.)*
+
+The layer has its own terms of use, so it is **not** copied into the committed `data/sample/`.
+
+### Geometry validity
+
+4 polygons are invalid as published (1 public, 3 separate). The loader repairs them with Shapely's `make_valid` instead of dropping them, keeps only the polygon parts, and sets `raw.authority_boundary.was_invalid = true` for traceability.
 
 ## 5. Year coverage
 

@@ -15,6 +15,11 @@ dependencies = [
     "pandas>=2.3",
     "openpyxl>=3.1",
     "rapidfuzz>=3.14.6",
+    "geopandas>=1.2.0",
+    "shapely>=2.2.0",
+    "pyogrio>=0.13.0",
+    "geoalchemy2>=0.21.0",
+    "alembic>=1.20.1",
 ]
 
 [dependency-groups]
@@ -42,3 +47,4 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["db: needs PostgreSQL (skipped when unreachable unless REQUIRE_DB=1)"]

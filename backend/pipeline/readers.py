@@ -12,7 +12,11 @@ import re
 import unicodedata
 from pathlib import Path
 
+import geopandas as gpd
 import pandas as pd
+from shapely import make_valid
+from shapely.geometry import MultiPolygon, Polygon
+from shapely.geometry.base import BaseGeometry
 
 from pipeline.download import parse_school_year
 
@@ -75,6 +79,7 @@ def read_enrolment(path: Path) -> pd.DataFrame:
     df.columns = [normalize_header(c) for c in df.columns]
     df = df.loc[:, [c for c in df.columns if c]]
     level = "school" if "school_code" in df.columns else "authority"
+    df["source_row"] = df.index + 2  # Excel row number (header is row 1)
 
     # Drop the footnote row(s) ("*First Nation school level enrolment ...") and blanks.
     cat = df["authority_category"].astype("string").str.strip()
@@ -97,7 +102,7 @@ def read_enrolment(path: Path) -> pd.DataFrame:
     keys = ["school_year", "authority_category", "authority_code", "authority_name"]
     if level == "school":
         keys += ["school_code", "school_name"]
-    out = df[[*keys, *GRADE_COLUMNS, "total"]].reset_index(drop=True)
+    out = df[[*keys, *GRADE_COLUMNS, "total", "source_row"]].reset_index(drop=True)
     out.attrs["level"] = level
     return out
 
@@ -112,6 +117,7 @@ def read_capacity(path: Path) -> pd.DataFrame:
     )
     df = pd.read_excel(path, header=header_row, dtype=object)
     df.columns = [normalize_header(c) for c in df.columns]
+    df["source_row"] = df.index + header_row + 2  # Excel row number
     df = df[pd.to_numeric(df["net_capacity"], errors="coerce").notna()].copy()
     for col in ("authority_name", "school_name", "facility_name", "facility_location"):
         df[col] = df[col].astype("string").str.strip()
@@ -128,5 +134,68 @@ def read_capacity(path: Path) -> pd.DataFrame:
         "net_capacity",
         "adj_total_enrolment",
         "utilization_rate",
+        "source_row",
     ]
     return df[cols].reset_index(drop=True)
+
+
+# ---------------------------------------------------------------------------
+# Geospatial sources
+# ---------------------------------------------------------------------------
+
+
+def _as_multipolygon(geom: BaseGeometry) -> MultiPolygon:
+    """Repair invalid geometry and return it as a MultiPolygon (the column type)."""
+    if not geom.is_valid:
+        geom = make_valid(geom)
+    if isinstance(geom, MultiPolygon):
+        return geom
+    if isinstance(geom, Polygon):
+        return MultiPolygon([geom])
+    parts: list[Polygon] = []
+    for part in getattr(geom, "geoms", []):  # GeometryCollection from make_valid
+        if isinstance(part, Polygon):
+            parts.append(part)
+        elif isinstance(part, MultiPolygon):
+            parts.extend(part.geoms)
+    return MultiPolygon(parts)
+
+
+def read_boundaries(path: Path) -> gpd.GeoDataFrame:
+    """Authority polygons. Features without a Code (areas outside any authority) are dropped."""
+    gdf = gpd.read_file(path)
+    layer = "separate" if "separate" in path.stem else "public"
+    year_match = re.search(r"(20\d{2})", path.stem)
+    out = gpd.GeoDataFrame(
+        {
+            "authority_code": gdf["Code"].map(normalize_code),
+            "authority_name": gdf["Name"].astype("string").str.strip(),
+            "layer": layer,
+            "boundary_year": int(year_match.group(1)) if year_match else None,
+            "source_feature": range(len(gdf)),
+            "was_invalid": (~gdf.geometry.is_valid).to_numpy(),
+        },
+        geometry=gdf.geometry.map(_as_multipolygon),
+        crs=gdf.crs or "EPSG:4326",
+    )
+    out = out[out.authority_code.notna()].to_crs("EPSG:4326")
+    return out.rename_geometry("geom").reset_index(drop=True)
+
+
+def read_school_points(path: Path) -> gpd.GeoDataFrame:
+    """Edmonton Public school points, keyed by the Alberta Education school number."""
+    gdf = gpd.read_file(path)
+    out = gpd.GeoDataFrame(
+        {
+            "school_code": gdf["abed_school_number_t"].map(normalize_code),
+            "school_name": gdf["school_name"].astype("string").str.strip(),
+            "grades": gdf["grades"].astype("string"),
+            "school_type": gdf["school_type"].astype("string"),
+            "address": gdf["address"].astype("string"),
+            "source_feature": range(len(gdf)),
+        },
+        geometry=gdf.geometry,
+        crs=gdf.crs or "EPSG:4326",
+    )
+    out = out[out.school_code.notna()].to_crs("EPSG:4326")
+    return out.rename_geometry("geom").reset_index(drop=True)

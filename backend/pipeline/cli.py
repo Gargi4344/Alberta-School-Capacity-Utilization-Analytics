@@ -1,6 +1,10 @@
 """Pipeline command line: `uv run abcap --help`."""
 
+import json
 import uuid
+from enum import StrEnum
+from pathlib import Path
+from typing import Annotated
 
 import typer
 
@@ -10,6 +14,17 @@ from app.core.logging import configure_logging
 app = typer.Typer(help="Alberta school capacity data pipeline.", no_args_is_help=True)
 
 
+class Source(StrEnum):
+    raw = "raw"
+    sample = "sample"
+
+
+SourceOpt = Annotated[
+    Source,
+    typer.Option(help="raw = full downloaded data (make data); sample = small committed subset."),
+]
+
+
 @app.callback()
 def _main() -> None:
     configure_logging(get_settings().log_level)
@@ -17,8 +32,10 @@ def _main() -> None:
 
 @app.command()
 def download(
-    force: bool = typer.Option(False, help="Re-download files even if unchanged."),
-    skip_optional: bool = typer.Option(False, help="Skip optional sources (EPSB school points)."),
+    force: Annotated[bool, typer.Option(help="Re-download files even if unchanged.")] = False,
+    skip_optional: Annotated[
+        bool, typer.Option(help="Skip optional sources (EPSB school points).")
+    ] = False,
 ) -> None:
     """Download all source files into data/raw/ and write data/raw/manifest.json."""
     from pipeline.download import download_all
@@ -38,12 +55,9 @@ def download(
 
 @app.command()
 def audit(
-    out: str = typer.Option("", help="Also write the report as JSON to this path."),
+    out: Annotated[str, typer.Option(help="Also write the report as JSON to this path.")] = "",
 ) -> None:
     """Recompute the source facts behind docs/source_mapping.md from data/raw/."""
-    import json
-    from pathlib import Path
-
     from pipeline.audit import audit as run_audit
 
     report = run_audit(get_settings().raw_dir)
@@ -53,6 +67,59 @@ def audit(
         typer.echo(f"wrote {out}")
     else:
         typer.echo(text)
+
+
+@app.command()
+def migrate() -> None:
+    """Apply database migrations (alembic upgrade head)."""
+    from pipeline.run import migrate as run_migrate
+
+    run_migrate(get_settings().database_url)
+    typer.echo("database is at the latest migration")
+
+
+@app.command()
+def run(source: SourceOpt = Source.raw) -> None:
+    """Run the pipeline: load every source file into the raw schema, then verify row counts."""
+    from app.db.session import get_engine
+    from pipeline.run import run_pipeline
+
+    settings = get_settings()
+    run_id = uuid.uuid4()
+    summary = run_pipeline(get_engine(), settings.data_dir / source.value, source.value, run_id)
+    for s in summary:
+        rows = s.get("rows_out", s.get("rows"))
+        typer.echo(f"  {s['step']:<20} rows={rows}")
+    typer.echo(f"run_id={run_id}: OK (see ops.pipeline_run)")
+
+
+@app.command()
+def verify(source: SourceOpt = Source.raw) -> None:
+    """Compare source-file row counts with the raw tables (no loading)."""
+    from app.db.session import get_engine
+    from pipeline.verify import RowCountMismatch, verify_raw_counts
+
+    with get_engine().connect() as conn:
+        try:
+            v = verify_raw_counts(conn, get_settings().data_dir / source.value)
+        except RowCountMismatch as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1) from exc
+    for name, c in v.per_file.items():
+        typer.echo(f"  {name:<58} source={c['source']:>6} loaded={c['loaded']:>6}")
+    typer.echo(f"{v.files} files, {v.loaded_rows} rows: all match")
+
+
+@app.command("make-sample")
+def make_sample() -> None:
+    """Rebuild data/sample/ from data/raw/ (a small real subset for CI)."""
+    from pipeline.sample import build_sample
+
+    settings = get_settings()
+    written = build_sample(settings.raw_dir, settings.data_dir / "sample")
+    for name, n in written.items():
+        typer.echo(f"  {name:<58} {n:>5}")
+    typer.echo(f"{len(written)} files written to {settings.data_dir / 'sample'}")
 
 
 if __name__ == "__main__":

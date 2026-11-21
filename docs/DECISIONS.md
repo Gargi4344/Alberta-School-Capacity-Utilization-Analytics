@@ -37,3 +37,27 @@ Only public (42) and separate (17) authorities have published polygons, and thei
 ## D9. Python 3.14, PostgreSQL 18 + PostGIS 3.7 (Phase 0)
 
 These are the latest stable versions as of 2026-11-21, following the spec's "latest stable" rule. The PostgreSQL 18 image keeps its data under `/var/lib/postgresql/18/`, so the volume mounts at `/var/lib/postgresql`.
+
+## D10. Raw keeps the source's wide layout, plus lineage (Phase 1)
+
+`raw.*` tables mirror the files: one column per grade, names and categories as published. The only changes are the ones needed to stack the years (canonical column names, 4-digit codes, blank → 0). Every row records `source_file`, its Excel `source_row` (or GeoJSON `source_feature`) and the `run_id`, so any number in the dashboard can be traced to a cell. Reshaping (grades to rows) happens in dbt staging (Phase 2).
+
+## D11. Full refresh in one transaction per step (Phase 1)
+
+Each load step runs `TRUNCATE` + `INSERT` inside one transaction. The data is small (about 28,000 rows, under 30 seconds), so incremental loading would add complexity for no benefit. Re-running gives identical tables, and a failure rolls back to the previous good load (tested). Optional sources still run when their files are missing and empty their table, so two datasets can never mix: the verify step caught exactly that bug during development.
+
+## D12. Row counts are verified independently of the readers (Phase 1)
+
+`verify_raw_counts` counts source rows with openpyxl and plain JSON using the simplest possible rule (rows below the header with a number in `Total` or `Net Capacity`; features with a non-blank code). It never imports `pipeline.readers`, so a reader bug cannot hide by being repeated on both sides. A mismatch fails the run.
+
+## D13. Explicit column types for every insert (Phase 1)
+
+pandas 3 turns UUID objects into text, which PostgreSQL rejects for `uuid` columns. Every insert passes the table's declared SQLAlchemy types to `to_sql` / `to_postgis`, so pandas never guesses a type.
+
+## D14. The run log stores the root cause of failures (Phase 1)
+
+pandas and SQLAlchemy wrap database errors in messages containing the full SQL statement (over 10 KB). `ops.pipeline_run.message` stores the innermost exception's first line instead, for example `DatatypeMismatch: column "run_id" is of type uuid but expression is of type character varying`.
+
+## D15. The sample excludes the EPSB points (Phase 1)
+
+`data/sample/` is committed to a public repo, so it only contains Open Government Licence – Alberta files. The EPSB layer has its own terms; its loader is covered by a unit test with made-up points instead.

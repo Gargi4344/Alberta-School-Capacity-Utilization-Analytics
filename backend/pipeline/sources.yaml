@@ -27,3 +27,16 @@ arcgis_layers:
     dest: boundaries/epsb_schools_2025.geojson
     optional: true
     licence: Edmonton Public Schools open data (check terms before redistribution)
+
+# Authorities copied into data/sample/ (`abcap make-sample`). Chosen to cover every
+# authority category and the known join edge cases (docs/source_mapping.md).
+sample_authorities:
+  - "0052"  # The Clearview School Division: rural public, colony and outreach schools
+  - "3020"  # The Edmonton School Division: large urban public; has EPSB school points
+  - "3170"  # Lloydminster Public: capacity rows with no Alberta enrolment match
+  - "0019"  # The Red Deer Catholic Separate School Division: separate
+  - "4870"  # Lloydminster Roman Catholic Separate: separate, unmatched capacity row
+  - "0284"  # The Southern Francophone Education Region: francophone (no polygon)
+  - "6020"  # Aurora School Ltd.: charter
+  - "9072"  # Strathcona-Tweedsmuir School: private
+  - "9240"  # Northern Lakes College: provincial

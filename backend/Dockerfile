@@ -9,6 +9,7 @@ RUN uv sync --frozen --no-dev --no-install-project
 
 COPY app ./app
 COPY pipeline ./pipeline
+COPY alembic.ini ./alembic.ini
 RUN uv sync --frozen --no-dev
 
 EXPOSE 8000
