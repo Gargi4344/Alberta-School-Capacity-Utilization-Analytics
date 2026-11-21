@@ -55,4 +55,4 @@ jobs:
           docker compose up -d --wait --build
           docker compose exec -T db psql -U abcap -d abcap -tAc \
             "SELECT postgis_lib_version(), (SELECT count(*) FROM pg_namespace WHERE nspname IN ('raw','staging','mart','ops'))"
-          curl -fsS http://localhost:8000/api/v1/health
+          curl -fsS --retry 10 --retry-delay 2 --retry-all-errors http://localhost:8000/api/v1/health

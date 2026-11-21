@@ -28,6 +28,20 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # Healthy only once the API answers, so `docker compose up --wait` waits for it.
+    # (The slim image has no curl; Python's urllib does the same job.)
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health', timeout=3)",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
 
   # The Next.js app arrives in Phase 6; until then it is behind a profile so
   # `docker compose up` works. Start it with `docker compose --profile frontend up`.
