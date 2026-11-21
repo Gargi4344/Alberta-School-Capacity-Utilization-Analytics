@@ -1,6 +1,6 @@
 # Alberta School Capacity & Utilization Planning Platform
 
-> **Status: Phase 1 of 8.** The data download, source mapping, and the verified load of 27,736 rows into PostgreSQL/PostGIS are built. The dashboard comes in later phases; see [docs/PROGRESS.md](docs/PROGRESS.md). Screenshots, setup and "What I learned" are added in Phase 8.
+> **Status: Phase 2 of 8.** The data download, the verified load of 27,736 rows into PostgreSQL/PostGIS, and a tested dbt star schema (7 mart tables, 58 tests) are built. The dashboard comes in later phases; see [docs/PROGRESS.md](docs/PROGRESS.md). Screenshots, setup and "What I learned" are added in Phase 8.
 
 Capital planners need to know which Alberta school authorities and schools are running out of space, and where enrolment is heading. This platform brings 10 years of public enrolment, capacity and boundary data into one PostgreSQL warehouse, checks its quality, forecasts enrolment 3 years ahead, and serves it through a self-service dashboard.
 
@@ -23,11 +23,11 @@ You need Docker and [uv](https://docs.astral.sh/uv/).
 make setup     # install backend deps, create .env
 make data      # download 24 public source files into data/raw/
 make db-up     # start PostgreSQL + PostGIS
-make pipeline  # migrate, load into the raw schema, verify row counts
+make pipeline  # migrate, load, verify row counts, dbt build (star schema + tests)
 make dev       # database + API: http://localhost:8000/docs
 ```
 
-No time to download? `make pipeline-sample` loads the committed sample in `data/sample/` (9 real authorities, all years). Run the tests with `make test`.
+No time to download? `make pipeline-sample` loads the committed sample in `data/sample/` (9 real authorities, all years). Run the tests with `make test`, and browse the data model with `make dbt-docs`.
 
 ## Data sources
 
@@ -44,7 +44,7 @@ All from the Government of Alberta under the [Open Government Licence – Albert
 
 ## Known limitations (so far)
 
-- Capacity is published for **2023-24 only**. Utilization for other years is an estimate and is labelled as one.
+- Capacity is published for **2023-24 only**. Utilization for other years is an estimate (headcount calibrated to 2023-24, capacity held flat) and is labelled as one.
 - The capacity file has no school codes, so it joins by name (99.7% of rows match).
 - Boundaries exist for public and separate authorities only.
 - The publisher removes First Nation schools from the enrolment files.

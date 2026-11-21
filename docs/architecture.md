@@ -37,7 +37,35 @@ flowchart LR
     OPS --> API
 ```
 
-**Status (Phase 1):** built so far: download, extract/load into `raw` (Pandas, GeoPandas), the independent row-count check, `ops.pipeline_run`, Compose (db and backend) and `/api/v1/health`. dbt, quality checks, forecasts and the dashboard follow in Phases 2 to 6.
+**Status (Phase 2):** built so far: download, extract/load into `raw` (Pandas, GeoPandas), the independent row-count check, `ops.pipeline_run`, dbt staging and the `mart` star schema with 58 tests, Compose (db and backend) and `/api/v1/health`. Quality checks, forecasts and the dashboard follow in Phases 3 to 6.
+
+### dbt lineage
+
+```mermaid
+flowchart LR
+    RE[raw.enrolment_school] --> SE[stg_enrolment__school] --> SG[stg_enrolment__school_grade]
+    RA[raw.enrolment_authority] --> SA[stg_enrolment__authority]
+    RC[raw.capacity] --> SC[stg_capacity__facility_row] --> M[int_capacity__matched]
+    M --> G[int_capacity__grouped] --> GR[int_capacity__group]
+    SE --> M
+    CW[(seed: crosswalk)] --> M
+    RB[raw.authority_boundary] --> SB[stg_geo__authority_boundary]
+    RP[raw.school_point] --> SP[stg_geo__school_point]
+    SA --> DY[dim_school_year]
+    SA --> DA[dim_authority]
+    SB --> DA
+    SE --> DS[dim_school]
+    SG --> DS
+    SP --> DS
+    SG --> FE[fact_enrolment]
+    G --> FC[fact_capacity]
+    GR --> FC
+    FC --> FSY[fact_school_year]
+    SE --> FSY
+    FSY --> AGG[agg_authority_year]
+    GR --> AGG
+    SA --> AGG
+```
 
 ### One pipeline run
 

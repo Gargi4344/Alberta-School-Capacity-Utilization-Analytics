@@ -38,11 +38,13 @@ jobs:
         run: uv run ruff check . && uv run ruff format --check .
       - name: Test (unit + database)
         run: uv run pytest -q
-      - name: Pipeline on committed sample (offline)
+      - name: Pipeline on committed sample (offline; load, verify, dbt build)
         run: |
           uv run abcap migrate
           uv run abcap run --source sample
           uv run abcap verify --source sample
+      - name: dbt docs generate
+        run: uv run abcap dbt docs generate
 
   compose:
     runs-on: ubuntu-latest

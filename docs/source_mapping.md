@@ -93,7 +93,7 @@ The sheet is `ACU 2023-24F`. Rows 1 and 2 are blank, so the header is on **row 3
 | `Adj Total Enrol` | `adj_total_enrolment` | Adjusted enrolment, with halves (for example `163.5`). It is the ministry's weighted count, not the headcount in the enrolment files |
 | `Utiliz. %` | `utilization_rate` | A **ratio** (0.85 means 85%). It equals `Adj Total Enrol ÷ Net Capacity` rounded to 2 decimals in all 1,602 rows. Range 0.04 to 2.25 |
 
-1,602 data rows cover 82 authorities, 1,542 school names and 1,540 facility names. 4 schools span more than one facility, and 13 facilities are shared by more than one school.
+1,602 data rows cover 82 authorities, 1,542 school names and 1,540 facility names. 4 schools span more than one facility, and 10 facilities are shared by more than one school (20 schools). *(Corrected in Phase 2: Phase 0 grouped by facility name only and counted 13. Black Gold's two "Robina Baker" rows have different capacities and are two buildings, and St. Augustine is one school with two same-named buildings.)* The source repeats a shared facility's numbers on each school's row; see DECISIONS D16 for how they are counted once.
 
 ### How capacity joins to enrolment
 

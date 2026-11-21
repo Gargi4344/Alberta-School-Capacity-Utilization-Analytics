@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: int_capacity__matched
+    description: Capacity rows with authority_code and school_code attached by exact normalized-name match (DECISIONS D4).
+    columns:
+      - name: capacity_row_id
+        data_tests: [unique, not_null]
+      - name: match_method
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [exact_name, crosswalk, ambiguous_name, unmatched_authority, unmatched_school]
+
+  - name: int_capacity__grouped
+    description: Matched capacity rows with their capacity group (DECISIONS D16).
+    columns:
+      - name: capacity_row_id
+        data_tests: [unique, not_null]
+      - name: capacity_group_id
+        data_tests: [not_null]
+
+  - name: int_capacity__group
+    description: One row per capacity group per capacity year.
+    columns:
+      - name: capacity_group_id
+        data_tests: [unique, not_null]
+      - name: authority_count
+        description: Must be 1; a group never spans two authorities.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [1]
+                quote: false

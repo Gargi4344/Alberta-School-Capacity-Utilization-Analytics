@@ -27,13 +27,6 @@ def _steps(engine: Engine, run_id: uuid.UUID) -> dict[str, PipelineRun]:
     return {r.step: r for r in rows}
 
 
-@pytest.fixture(scope="module")
-def sample_run(db_engine: Engine) -> uuid.UUID:
-    run_id = uuid.uuid4()
-    run_pipeline(db_engine, SAMPLE_DIR, "sample", run_id)
-    return run_id
-
-
 def test_raw_row_counts_match_source_files(db_engine: Engine, sample_run: uuid.UUID) -> None:
     expected = expected_counts(SAMPLE_DIR)
     with db_engine.connect() as conn:
@@ -53,12 +46,14 @@ def test_every_step_is_logged_with_the_run_id(db_engine: Engine, sample_run: uui
         "load_boundaries",
         "load_school_points",
         "verify_raw_counts",
+        "dbt_build",
     }
     for s in steps.values():
         assert s.status == "success"
         assert s.source == "sample"
         assert s.finished_at is not None and s.finished_at >= s.started_at
-        assert s.rows_in == s.rows_out
+        if s.step != "dbt_build":
+            assert s.rows_in == s.rows_out
     assert steps["load_school_points"].message == "optional source not present; table emptied"
     assert steps["load_school_points"].rows_out == 0
 

@@ -82,11 +82,15 @@ def migrate() -> None:
 def run(source: SourceOpt = Source.raw) -> None:
     """Run the pipeline: load every source file into the raw schema, then verify row counts."""
     from app.db.session import get_engine
+    from pipeline.dbt import dbt_vars
     from pipeline.run import run_pipeline
 
     settings = get_settings()
     run_id = uuid.uuid4()
-    summary = run_pipeline(get_engine(), settings.data_dir / source.value, source.value, run_id)
+    variables = dbt_vars(settings.utilization_threshold_pct, settings.over_capacity_pct)
+    summary = run_pipeline(
+        get_engine(), settings.data_dir / source.value, source.value, run_id, variables
+    )
     for s in summary:
         rows = s.get("rows_out", s.get("rows"))
         typer.echo(f"  {s['step']:<20} rows={rows}")
@@ -108,6 +112,20 @@ def verify(source: SourceOpt = Source.raw) -> None:
     for name, c in v.per_file.items():
         typer.echo(f"  {name:<58} source={c['source']:>6} loaded={c['loaded']:>6}")
     typer.echo(f"{v.files} files, {v.loaded_rows} rows: all match")
+
+
+@app.command(
+    "dbt",
+    context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
+)
+def dbt_command(ctx: typer.Context) -> None:
+    """Run any dbt command against DATABASE_URL, e.g. `abcap dbt docs generate`."""
+    from pipeline import dbt
+
+    settings = get_settings()
+    variables = dbt.dbt_vars(settings.utilization_threshold_pct, settings.over_capacity_pct)
+    res = dbt.invoke(list(ctx.args), settings.database_url, variables)
+    raise typer.Exit(0 if res.success else 1)
 
 
 @app.command("make-sample")

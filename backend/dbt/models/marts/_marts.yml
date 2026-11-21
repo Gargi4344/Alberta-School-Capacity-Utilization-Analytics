@@ -1,0 +1,207 @@
+version: 2
+
+models:
+  - name: dim_school_year
+    description: One row per school year with enrolment data.
+    columns:
+      - name: school_year
+        description: "School year, for example 2025-26."
+        data_tests: [unique, not_null]
+      - name: start_year
+        description: Calendar year the school year starts in.
+        data_tests: [unique, not_null]
+      - name: is_preliminary
+        description: True for years treated as preliminary (dbt var preliminary_school_years; default the latest year).
+      - name: has_published_capacity
+        description: True when the ministry published capacity for this year (2023-24 only, so far).
+
+  - name: dim_authority
+    description: One row per school authority reported since 2016-17. Name and type from the latest year reported.
+    columns:
+      - name: authority_code
+        description: 4-digit Alberta Education authority code.
+        data_tests: [unique, not_null]
+      - name: authority_name
+        data_tests: [not_null]
+      - name: authority_type
+        description: Authority category as published, lower case. 'provincial' is an addition to the spec's list (DECISIONS D5).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [public, separate, francophone, charter, private, provincial]
+      - name: first_school_year
+      - name: last_school_year
+      - name: years_reported
+      - name: is_active
+        description: Reported in the latest school year.
+      - name: boundary_layer
+        description: public or separate; null for authority types without a published boundary.
+      - name: geometry_was_repaired
+        description: The published polygon was invalid and was repaired with make_valid.
+      - name: geom
+        description: Authority boundary (MultiPolygon, EPSG:4326, 2025). Null for francophone, charter, private and provincial authorities.
+
+  - name: dim_school
+    description: One row per school reported since 2016-17. Name and authority from the latest year reported.
+    columns:
+      - name: school_code
+        description: 4-digit Alberta Education school code.
+        data_tests: [unique, not_null]
+      - name: school_name
+        data_tests: [not_null]
+      - name: authority_code
+        description: The school's authority in its latest year.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_authority')
+                field: authority_code
+      - name: grades_offered
+        description: "Range of grades with students in the latest year, for example ECS–6 or 10–12."
+      - name: is_open
+        description: Reported in the latest school year.
+      - name: geom
+        description: School location (Point, EPSG:4326). Edmonton Public schools only (optional EPSB source).
+
+  - name: fact_enrolment
+    description: Headcount by school, school year and grade, as published. Zeros kept.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [school_code, school_year, grade]
+    columns:
+      - name: school_code
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_school')
+                field: school_code
+      - name: school_year
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_school_year')
+                field: school_year
+      - name: grade
+        description: Ungraded, ECS, or 1 to 12.
+        data_tests: [not_null]
+      - name: grade_order
+        description: Sort key, -1 for Ungraded, 0 for ECS.
+      - name: authority_code
+        description: The school's authority in that year.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_authority')
+                field: authority_code
+      - name: headcount
+        data_tests: [not_null]
+
+  - name: fact_capacity
+    description: >
+      Capacity and utilization by school and school year, for years with published
+      capacity. Values are the school's capacity group (DECISIONS D16): schools sharing
+      a facility share its numbers. utilization_rate = adjusted_enrolment / capacity.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [school_code, school_year]
+    columns:
+      - name: school_code
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_school')
+                field: school_code
+      - name: capacity
+        description: Net capacity of the capacity group (sum over distinct facilities).
+        data_tests: [not_null]
+      - name: adjusted_enrolment
+        description: Ministry adjusted enrolment of the capacity group, as published (not headcount).
+      - name: utilization_rate
+        description: Ratio, 0.85 = 85%.
+      - name: published_utilization_rate
+        description: The 2-decimal value printed in the source, for schools with a single capacity row.
+      - name: shares_facility
+        description: The school shares its facility with another school.
+      - name: has_multiple_facilities
+        description: The school operates in more than one facility.
+
+  - name: fact_school_year
+    description: >
+      One row per school per school year with enrolment, capacity and utilization.
+      utilization_rate is the published value when available, else an estimate
+      (headcount / latest published capacity, capacity held flat); see utilization_basis.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [school_code, school_year]
+    columns:
+      - name: school_code
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_school')
+                field: school_code
+      - name: total_enrolment
+        description: Headcount, all grades.
+      - name: capacity
+        description: Latest published capacity of the school's capacity group (null when the school has no capacity row).
+      - name: capacity_group_enrolment
+        description: Headcount of every school in the capacity group that year.
+      - name: adjustment_factor
+        description: The capacity group's adjusted enrolment / headcount in the capacity year (DECISIONS D17).
+      - name: capacity_group_adjusted_enrolment
+        description: capacity_group_enrolment x adjustment_factor.
+      - name: utilization_estimated
+        description: capacity_group_adjusted_enrolment / capacity. Equals the published value in the capacity year.
+      - name: utilization_published
+        description: From fact_capacity, in years with published capacity.
+      - name: utilization_basis
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [published, estimated]
+      - name: is_over_threshold
+        description: utilization_rate >= the threshold (default 85%).
+      - name: is_over_capacity
+        description: utilization_rate >= 100%.
+
+  - name: agg_authority_year
+    description: >
+      Authority x school year. total_enrolment is the official authority total;
+      capacity and utilization cover schools with capacity, each capacity group once.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [authority_code, school_year]
+    columns:
+      - name: authority_code
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_authority')
+                field: authority_code
+      - name: total_enrolment
+        data_tests: [not_null]
+      - name: total_capacity
+      - name: enrolment_in_capacity_schools
+        description: Headcount of schools that have capacity (each capacity group once).
+      - name: utilization_estimated
+        description: Sum of the groups' calibrated adjusted enrolment / total_capacity.
+      - name: utilization_rate
+        description: Published in capacity years, else the calibrated estimate (equal to published in 2023-24).
+      - name: utilization_basis
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [published, estimated]
+      - name: schools_over_85
+        description: Schools with utilization_rate >= the threshold (default 85%).
+      - name: schools_over_100
+        description: Schools with utilization_rate >= 100%.

@@ -1,7 +1,7 @@
-"""Pipeline orchestration. Phase 1: extract/load + raw row-count verification.
+"""Pipeline orchestration: extract/load, raw row-count verification, dbt build.
 
-Later phases append steps here (dbt build, quality checks, forecast), each tracked
-in ops.pipeline_run under the same run_id.
+Later phases append steps here (quality checks, forecast), each tracked in
+ops.pipeline_run under the same run_id.
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ from alembic import command
 from alembic.config import Config
 from sqlalchemy import Connection, Engine
 
+from pipeline import dbt
 from pipeline.load import (
     LoadResult,
     load_boundaries,
@@ -46,7 +47,17 @@ def migrate(database_url: str) -> None:
     command.upgrade(cfg, "head")
 
 
-def run_pipeline(engine: Engine, source_dir: Path, source: str, run_id: uuid.UUID) -> list[dict]:
+class DbtBuildFailed(RuntimeError):
+    pass
+
+
+def run_pipeline(
+    engine: Engine,
+    source_dir: Path,
+    source: str,
+    run_id: uuid.UUID,
+    dbt_vars: dict | None = None,
+) -> list[dict]:
     if not source_dir.is_dir():
         raise FileNotFoundError(f"source folder {source_dir} does not exist; run `make data`")
     summary: list[dict] = []
@@ -69,4 +80,21 @@ def run_pipeline(engine: Engine, source_dir: Path, source: str, run_id: uuid.UUI
         res.message = f"{v.files} files: source rows = loaded rows"
         res.details = {"per_file": v.per_file}
     summary.append({"step": "verify_raw_counts", "files": v.files, "rows": v.loaded_rows})
+
+    database_url = engine.url.render_as_string(hide_password=False)
+    with track_step(engine, run_id, "dbt_build", source) as res:
+        outcome = dbt.build(database_url, dbt_vars or {})
+        res.rows_in = sum(outcome.counts.values())
+        res.rows_out = outcome.counts.get("success", 0) + outcome.counts.get("pass", 0)
+        res.details = {
+            "counts": outcome.counts,
+            "failures": outcome.failures,
+            "warnings": outcome.warnings,
+        }
+        res.message = (
+            f"{res.rows_out}/{res.rows_in} nodes passed, {len(outcome.warnings)} warning(s)"
+        )
+        if not outcome.success:
+            raise DbtBuildFailed(outcome.error or "; ".join(outcome.failures[:5]))
+    summary.append({"step": "dbt_build", "rows": res.rows_out, **outcome.counts})
     return summary

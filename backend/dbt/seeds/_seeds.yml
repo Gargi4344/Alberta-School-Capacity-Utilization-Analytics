@@ -1,0 +1,14 @@
+version: 2
+
+seeds:
+  - name: capacity_school_crosswalk
+    description: >
+      Manual, reviewed links from a capacity-file school name to a school code, for
+      rows the exact name match cannot link. Empty by design until a link is
+      confirmed against a second source (DECISIONS D4).
+    config:
+      column_types:
+        authority_name: varchar(255)
+        school_name: varchar(255)
+        school_code: varchar(4)
+        note: text

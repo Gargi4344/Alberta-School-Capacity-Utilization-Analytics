@@ -6,6 +6,7 @@ unless REQUIRE_DB=1 (set in CI), where a missing database is a failure.
 """
 
 import os
+import uuid
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -59,3 +60,13 @@ def db_engine(db_url: str) -> Iterator[Engine]:
     engine = create_engine(db_url)
     yield engine
     engine.dispose()
+
+
+@pytest.fixture(scope="session")
+def sample_run(db_engine: Engine) -> uuid.UUID:
+    """The full pipeline (load, verify, dbt build) on data/sample/, once per session."""
+    from pipeline.run import run_pipeline
+
+    run_id = uuid.uuid4()
+    run_pipeline(db_engine, SAMPLE_DIR, "sample", run_id)
+    return run_id

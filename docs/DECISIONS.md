@@ -61,3 +61,21 @@ pandas and SQLAlchemy wrap database errors in messages containing the full SQL s
 ## D15. The sample excludes the EPSB points (Phase 1)
 
 `data/sample/` is committed to a public repo, so it only contains Open Government Licence – Alberta files. The EPSB layer has its own terms; its loader is covered by a unit test with made-up points instead.
+
+## D16. Capacity groups: shared and multi-campus facilities (Phase 2)
+
+The capacity file repeats a shared facility's full capacity and enrolment on every school's row (for example Colonel Walker and Piitoayis Family School both show 668 seats and 366 students). A few multi-campus schools repeat the school's enrolment on every campus row (Catholic Central High: 498.5 on both campuses), while others split it (Calgary Arts Academy, Ellerslie Campus). Adding the rows would double count.
+
+Rule: a **facility** is (year, authority, facility name, net capacity). Schools sharing a facility form one **capacity group**; any other school is its own group. Group capacity = sum over distinct facilities; group adjusted enrolment = sum of distinct values. Today: 1,582 groups, of which 10 are shared facilities (20 schools) and 4 are multi-campus schools. Two rows with the same facility name but different capacities (Black Gold's Robina Baker) are two facilities, not one shared one.
+
+Guards: `assert_capacity_groups_are_simple` fails if a school is ever both multi-campus and sharing (the rule would no longer hold), and `assert_authority_capacity_counts_each_facility_once` checks authority totals against distinct facilities.
+
+## D17. Estimated utilization is calibrated to the published year (Phase 2)
+
+Published utilization uses the ministry's *adjusted* enrolment; other years only have *headcount*. A raw headcount estimate is on a different scale: in 2023-24 it flags 503 schools over 85% where the published figures flag 572. Mixing the two would put an artificial jump in every time series.
+
+So each capacity group gets an adjustment factor = adjusted enrolment ÷ headcount in the capacity year (median 1.025, 90% between 0.94 and 1.18), and estimated utilization = headcount × factor ÷ capacity. The estimate equals the published value exactly in 2023-24 (tested for every school and authority) and follows headcount in other years. Assumption, stated in the UI: each school's mix of weighted enrolment (kindergarten, for example) stays about the same over time.
+
+## D18. dbt runs in-process, configured from DATABASE_URL (Phase 2)
+
+`abcap run` calls dbt through `dbtRunner` as a logged pipeline step. The dbt profile reads `ABCAP_DB_*` variables that the runner fills from `DATABASE_URL`, and thresholds are passed as dbt vars from the same settings the API uses, so the connection and the 85% threshold are configured once. No dbt packages are used (a small `unique_combination` generic test replaces dbt_utils), so `dbt build` needs no network.

@@ -4,7 +4,7 @@
 UV  ?= uv
 BE  := cd backend &&
 
-.PHONY: help setup data audit sample migrate pipeline pipeline-sample verify db-up db-down dev test lint format clean
+.PHONY: help setup data audit sample migrate pipeline pipeline-sample verify dbt-build dbt-docs db-up db-down dev test lint format clean
 
 help:          ## Show this help
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'
@@ -31,7 +31,7 @@ sample:        ## Rebuild data/sample/ (small real subset) from data/raw/
 migrate:       ## Apply database migrations (needs `make db-up`)
 	$(BE) $(UV) run abcap migrate
 
-pipeline: migrate  ## Load data/raw/ into PostgreSQL and verify row counts (dbt, checks, forecast follow)
+pipeline: migrate  ## Load data/raw/, verify row counts, dbt build (checks and forecast follow)
 	$(BE) $(UV) run abcap run
 
 pipeline-sample: migrate  ## Same as pipeline, on the committed sample (no download needed)
@@ -39,6 +39,12 @@ pipeline-sample: migrate  ## Same as pipeline, on the committed sample (no downl
 
 verify:        ## Compare source-file row counts with the raw tables
 	$(BE) $(UV) run abcap verify
+
+dbt-build:     ## Rebuild staging and mart models and run dbt tests (raw must be loaded)
+	$(BE) $(UV) run abcap dbt build
+
+dbt-docs:      ## Generate dbt docs and serve them at http://localhost:8080
+	$(BE) $(UV) run abcap dbt docs generate && $(UV) run abcap dbt docs serve --port 8080
 
 dev:           ## Run database + API (frontend joins in Phase 6)
 	docker compose up --build

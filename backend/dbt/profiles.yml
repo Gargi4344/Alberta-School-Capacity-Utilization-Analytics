@@ -1,0 +1,14 @@
+# Connection details come from environment variables. `abcap run` and `abcap dbt`
+# fill them from DATABASE_URL, so there is one source of truth for the connection.
+ab_capacity:
+  target: default
+  outputs:
+    default:
+      type: postgres
+      host: "{{ env_var('ABCAP_DB_HOST', 'localhost') }}"
+      port: "{{ env_var('ABCAP_DB_PORT', '5432') | int }}"
+      user: "{{ env_var('ABCAP_DB_USER', 'abcap') }}"
+      password: "{{ env_var('ABCAP_DB_PASSWORD', 'abcap') }}"
+      dbname: "{{ env_var('ABCAP_DB_NAME', 'abcap') }}"
+      schema: public
+      threads: 4

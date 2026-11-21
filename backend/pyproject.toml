@@ -20,6 +20,8 @@ dependencies = [
     "pyogrio>=0.13.0",
     "geoalchemy2>=0.21.0",
     "alembic>=1.20.1",
+    "dbt-core>=1.12.7",
+    "dbt-postgres>=1.11.0",
 ]
 
 [dependency-groups]

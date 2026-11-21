@@ -1,0 +1,17 @@
+version: 2
+
+sources:
+  - name: raw
+    description: Source files loaded as published by `abcap run` (see docs/source_mapping.md).
+    schema: raw
+    tables:
+      - name: enrolment_school
+        description: School enrolment by grade, one row per school per school year (2016-17 onward).
+      - name: enrolment_authority
+        description: Authority enrolment by grade, one row per authority per school year.
+      - name: capacity
+        description: Net capacity, adjusted enrolment and utilization per school x facility (2023-24). No codes.
+      - name: authority_boundary
+        description: Public and separate school authority polygons (2025), EPSG:4326.
+      - name: school_point
+        description: Edmonton Public school points (optional source).

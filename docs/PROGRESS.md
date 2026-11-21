@@ -4,8 +4,8 @@
 | --- | --- | --- |
 | 0. Scaffold, Compose, `make data`, source mapping | ✅ Done 2026-11-21 | See below |
 | 1. Extract and load raw tables, `ops.pipeline_run` | ✅ Done 2026-11-21 | See below |
-| 2. dbt staging and marts | Next | |
-| 3. Quality checks | — | |
+| 2. dbt staging and marts | ✅ Done 2026-11-21 | See below |
+| 3. Quality checks | Next | |
 | 4. Forecasts and notebooks | — | |
 | 5. FastAPI endpoints | — | `/api/v1/health` exists |
 | 6. Next.js app | — | |
@@ -54,6 +54,30 @@
 - Correction to Phase 0: 224 of the 225 EPSB points have a usable school number. *Ellerslie Campus South* has a blank one.
 
 **Carried into Phase 2:** the dbt project. Staging unpivots grades, the capacity name join follows D4, and the marts follow the spec's star schema.
+
+## Phase 2 (2026-11-21)
+
+**Done-when check: `dbt build` passes and the star schema can be queried.** `abcap run` now ends with a logged `dbt_build` step: 75 nodes (1 seed, 9 views, 7 tables, 58 tests): **74 pass, 1 expected warning** (the 5 capacity rows that match no school, the same 5 as the Phase 0 audit). `dbt docs generate` works (`make dbt-docs`).
+
+| Mart | Rows |
+| --- | ---: |
+| dim_school_year / dim_authority / dim_school | 10 / 373 / 2,545 |
+| fact_enrolment (22,815 school-years × 14 grade columns) | 319,410 |
+| fact_capacity (1,597 matched rows − 5 extra campus rows) | 1,592 |
+| fact_school_year / agg_authority_year | 22,815 / 3,036 |
+
+Checks built into `dbt build`: keys unique and not null, facts → dims relationships, accepted authority types, school totals = authority files every year, grade rows = published totals, computed utilization = printed value (half-up rounding), each facility counted once in authority capacity, capacity groups stay simple, estimate = published in the capacity year.
+
+**Found while building:**
+
+- The capacity file repeats shared and multi-campus numbers. Capacity groups count each facility once (D16). Phase 0's "13 shared facilities" was really 10 (corrected in source_mapping.md).
+- A raw headcount estimate would flag 69 fewer schools than the published figures in the same year, putting a jump in every trend. Estimates are now calibrated (D17); schools over 85% run 492 → 572 → 632 for 2022-23 → 2024-25 with no method break.
+- 190 ÷ 400 = 0.475 is printed as 0.48 (half-up). The test compares with the source's rounding rather than a tolerance.
+- 51 tests pass, including dbt on the sample and a check that the SQL and Python name normalizations agree on every name in the data.
+
+**Headline (2025-26, estimated):** 609 schools at or over 85% and 262 at or over 100%. Calgary Public is at 95.1% and Edmonton Catholic at 100.9%.
+
+**Carried into Phase 3:** the custom quality checks into `ops.dq_result` (negative headcounts, utilization outside 0–250%, capacity without enrolment and the reverse, year-over-year change over 50%, duplicate names), plus surfacing the dbt test results there.
 
 **Local environment notes (Windows):**
 
