@@ -1,0 +1,45 @@
+name: ab-capacity
+
+services:
+  db:
+    image: postgis/postgis:18-3.7
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-abcap}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-abcap}
+      POSTGRES_DB: ${POSTGRES_DB:-abcap}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ./backend/app/db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-abcap}:${POSTGRES_PASSWORD:-abcap}@db:5432/${POSTGRES_DB:-abcap}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # The Next.js app arrives in Phase 6; until then it is behind a profile so
+  # `docker compose up` works. Start it with `docker compose --profile frontend up`.
+  frontend:
+    profiles: ["frontend"]
+    build: ./frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

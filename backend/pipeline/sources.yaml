@@ -1,0 +1,29 @@
+# Public data sources for the platform. All are published under the
+# Open Government Licence - Alberta unless noted.
+# `make data` reads this file. CKAN datasets are resolved through the
+# open.alberta.ca API, so new school years are picked up automatically.
+
+ckan_datasets:
+  - key: enrolment
+    package: student-enrolment-by-school-authority-and-grade-level
+    dest: enrolment
+    formats: [XLSX]
+  - key: capacity
+    package: list-of-albertas-school-jurisdiction-schools-with-their-total-capacity-for-the-school-year
+    dest: capacity
+    formats: [XLSX]
+
+arcgis_layers:
+  # Layer 3 ("Area Fill") holds the authority polygons.
+  - key: boundaries_public
+    url: https://geospatial.alberta.ca/titan/rest/services/Education_Maps/edu_public_schl_auth_bound_2025_group_public/MapServer/3
+    dest: boundaries/public_authorities_2025.geojson
+  - key: boundaries_separate
+    url: https://geospatial.alberta.ca/titan/rest/services/Education_Maps/edu_separate_schl_auth_bound_2025_group_public/MapServer/3
+    dest: boundaries/separate_authorities_2025.geojson
+  # Optional: Edmonton Public Schools points (school-level map for Edmonton only).
+  - key: epsb_schools
+    url: https://azimuth.epsb.ca/server/rest/services/Hosted/Schools__2025/FeatureServer/62
+    dest: boundaries/epsb_schools_2025.geojson
+    optional: true
+    licence: Edmonton Public Schools open data (check terms before redistribution)

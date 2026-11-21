@@ -1,0 +1,293 @@
+{
+  "enrolment": {
+    "years": [
+      {
+        "school_year": "2016-17",
+        "schools": 2225,
+        "authorities": 294,
+        "provincial_total": 694209,
+        "authority_file_total": 694209,
+        "authorities_not_reconciling": 0,
+        "duplicate_school_codes": 0,
+        "categories": {
+          "Public": 1491,
+          "Separate": 388,
+          "Private": 274,
+          "Francophone": 41,
+          "Charter": 22,
+          "Provincial": 9
+        },
+        "grade_sum_mismatches": 0
+      },
+      {
+        "school_year": "2017-18",
+        "schools": 2256,
+        "authorities": 294,
+        "provincial_total": 708968,
+        "authority_file_total": 708968,
+        "authorities_not_reconciling": 0,
+        "duplicate_school_codes": 0,
+        "categories": {
+          "Public": 1504,
+          "Separate": 402,
+          "Private": 275,
+          "Francophone": 42,
+          "Charter": 22,
+          "Provincial": 11
+        },
+        "grade_sum_mismatches": 0
+      },
+      {
+        "school_year": "2018-19",
+        "schools": 2276,
+        "authorities": 299,
+        "provincial_total": 719450,
+        "authority_file_total": 719450,
+        "authorities_not_reconciling": 0,
+        "duplicate_school_codes": 0,
+        "categories": {
+          "Public": 1513,
+          "Separate": 409,
+          "Private": 279,
+          "Francophone": 42,
+          "Charter": 22,
+          "Provincial": 11
+        },
+        "grade_sum_mismatches": 0
+      },
+      {
+        "school_year": "2019-20",
+        "schools": 2274,
+        "authorities": 292,
+        "provincial_total": 731345,
+        "authority_file_total": 731345,
+        "authorities_not_reconciling": 0,
+        "duplicate_school_codes": 0,
+        "categories": {
+          "Public": 1516,
+          "Separate": 410,
+          "Private": 275,
+          "Francophone": 42,
+          "Charter": 22,
+          "Provincial": 9
+        },
+        "grade_sum_mismatches": 0
+      },
+      {
+        "school_year": "2020-21",
+        "schools": 2262,
+        "authorities": 294,
+        "provincial_total": 722302,
+        "authority_file_total": 722302,
+        "authorities_not_reconciling": 0,
+        "duplicate_school_codes": 0,
+        "categories": {
+          "Public": 1499,
+          "Separate": 411,
+          "Private": 278,
+          "Francophone": 42,
+          "Charter": 24,
+          "Provincial": 8
+        },
+        "grade_sum_mismatches": 0
+      },
+      {
+        "school_year": "2021-22",
+        "schools": 2275,
+        "authorities": 303,
+        "provincial_total": 733116,
+        "authority_file_total": 733116,
+        "authorities_not_reconciling": 0,
+        "duplicate_school_codes": 0,
+        "categories": {
+          "Public": 1496,
+          "Separate": 411,
+          "Private": 288,
+          "Francophone": 43,
+          "Charter": 26,
+          "Provincial": 11
+        },
+        "grade_sum_mismatches": 0
+      },
+      {
+        "school_year": "2022-23",
+        "schools": 2289,
+        "authorities": 312,
+        "provincial_total": 756729,
+        "authority_file_total": 756729,
+        "authorities_not_reconciling": 0,
+        "duplicate_school_codes": 0,
+        "categories": {
+          "Public": 1492,
+          "Separate": 411,
+          "Private": 302,
+          "Francophone": 44,
+          "Charter": 30,
+          "Provincial": 10
+        },
+        "grade_sum_mismatches": 0
+      },
+      {
+        "school_year": "2023-24",
+        "schools": 2303,
+        "authorities": 313,
+        "provincial_total": 788019,
+        "authority_file_total": 788019,
+        "authorities_not_reconciling": 0,
+        "duplicate_school_codes": 0,
+        "categories": {
+          "Public": 1493,
+          "Separate": 413,
+          "Private": 310,
+          "Francophone": 44,
+          "Charter": 33,
+          "Provincial": 10
+        },
+        "grade_sum_mismatches": 0
+      },
+      {
+        "school_year": "2024-25",
+        "schools": 2318,
+        "authorities": 316,
+        "provincial_total": 811847,
+        "authority_file_total": 811847,
+        "authorities_not_reconciling": 0,
+        "duplicate_school_codes": 0,
+        "categories": {
+          "Public": 1498,
+          "Separate": 412,
+          "Private": 316,
+          "Francophone": 46,
+          "Charter": 36,
+          "Provincial": 10
+        },
+        "grade_sum_mismatches": 0
+      },
+      {
+        "school_year": "2025-26",
+        "schools": 2337,
+        "authorities": 319,
+        "provincial_total": 820895,
+        "authority_file_total": 820895,
+        "authorities_not_reconciling": 0,
+        "duplicate_school_codes": 0,
+        "categories": {
+          "Public": 1495,
+          "Separate": 415,
+          "Private": 326,
+          "Francophone": 49,
+          "Charter": 42,
+          "Provincial": 10
+        },
+        "grade_sum_mismatches": 0
+      }
+    ],
+    "school_codes": {
+      "distinct": 2545,
+      "in_every_year": 2015,
+      "with_6_plus_years": 2232,
+      "renamed": 220,
+      "moved_authority": 6
+    },
+    "authority_codes": {
+      "distinct": 373,
+      "renamed": 78
+    }
+  },
+  "capacity": {
+    "2023-24": {
+      "file": "educ-school-capacity-2023-2024-school-year.xlsx",
+      "rows": 1602,
+      "authorities": 82,
+      "authorities_matched": 82,
+      "rows_school_matched": 1597,
+      "unmatched": [
+        {
+          "authority_name": "Lloydminster Public School Division",
+          "school_name": "E S Laird"
+        },
+        {
+          "authority_name": "Lloydminster Public School Division",
+          "school_name": "Jack Kemp School"
+        },
+        {
+          "authority_name": "Lloydminster Public School Division",
+          "school_name": "Winston Churchill"
+        },
+        {
+          "authority_name": "Lloydminster Roman Catholic Separate School Division",
+          "school_name": "Father Gorman Elementary School"
+        },
+        {
+          "authority_name": "The Greater St. Albert Roman Catholic Separate School Division",
+          "school_name": "Ecole Marie Poburan"
+        }
+      ],
+      "schools_with_multiple_facilities": 4,
+      "facilities_shared_by_schools": 13,
+      "utilization_equals_adj_over_net": true,
+      "utilization_min": 0.04,
+      "utilization_max": 2.25,
+      "enrolment_schools_in_matched_authorities": 1983,
+      "categories_covered": {
+        "Public": 42,
+        "Charter": 19,
+        "Separate": 17,
+        "Francophone": 4
+      }
+    }
+  },
+  "boundaries": {
+    "public_authorities_2025": {
+      "features": 43,
+      "features_without_code": 1,
+      "geometry_types": {
+        "Polygon": 32,
+        "MultiPolygon": 11
+      },
+      "codes_matched_to_enrolment": 42,
+      "distinct_codes": 42
+    },
+    "separate_authorities_2025": {
+      "features": 23,
+      "features_without_code": 6,
+      "geometry_types": {
+        "MultiPolygon": 13,
+        "Polygon": 10
+      },
+      "codes_matched_to_enrolment": 17,
+      "distinct_codes": 17
+    },
+    "coverage_by_category": {
+      "Charter": {
+        "authorities": 26,
+        "with_polygon": 0
+      },
+      "Francophone": {
+        "authorities": 4,
+        "with_polygon": 0
+      },
+      "Private": {
+        "authorities": 225,
+        "with_polygon": 0
+      },
+      "Provincial": {
+        "authorities": 5,
+        "with_polygon": 0
+      },
+      "Public": {
+        "authorities": 42,
+        "with_polygon": 42
+      },
+      "Separate": {
+        "authorities": 17,
+        "with_polygon": 17
+      }
+    },
+    "epsb_points": {
+      "features": 225,
+      "epsb_schools_in_latest_enrolment": 224,
+      "epsb_schools_with_point": 224
+    }
+  }
+}

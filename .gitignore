@@ -1,0 +1,32 @@
+# Secrets
+.env
+
+# Data: raw files are downloaded by `make data`, never committed
+data/raw/*
+!data/raw/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+frontend/test-results/
+frontend/playwright-report/
+
+# dbt
+target/
+dbt_packages/
+logs/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
